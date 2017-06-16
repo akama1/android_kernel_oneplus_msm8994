@@ -22,8 +22,13 @@
 #define CPU_MASK(cpu) (1U << (cpu))
 
 /*
+<<<<<<< HEAD
  * For MSM8994 (big.LITTLE), CPU0, CPU1, CPU2 and CPU3 are LITTLE CPUs;
  * CPU4, CPU5, CPU6 and CPU7 are big CPUs.
+ *
+ * define LITTLE_CPU_MASK (CPU_MASK(0) | CPU_MASK(1) | CPU_MASK(2) | CPU_MASK(3))
+ * #define BIG_CPU_MASK    (CPU_MASK(4) | CPU_MASK(5) | CPU_MASK(6) | CPU_MASK(7))
+
  */
 #define LITTLE_CPU_MASK (CPU_MASK(0) | CPU_MASK(1) | CPU_MASK(2) | CPU_MASK(3))
 #define BIG_CPU_MASK    (CPU_MASK(4) | CPU_MASK(5) | CPU_MASK(6) | CPU_MASK(7))
@@ -36,7 +41,7 @@
 #define INPUT_REBOOST         (1U << 4)
 
 /* The duration in milliseconds for the wake boost */
-#define FB_BOOST_MS (3000)
+#define FB_BOOST_MS (2000)
 
 /*
  * "fb" = "framebuffer". This is the boost that occurs on framebuffer unblank,
@@ -98,6 +103,7 @@ static void set_boost_bit(struct boost_policy *b, uint32_t state);
 static void clear_boost_bit(struct boost_policy *b, uint32_t state);
 static void unboost_all_cpus(struct boost_policy *b);
 static void update_online_cpu_policy(void);
+<<<<<<< HEAD
 static bool validate_cpu_freq(unsigned int cpu, uint32_t *freq);
 
 static inline bool cpufreq_next_valid(struct cpufreq_frequency_table **pos)
@@ -109,6 +115,10 @@ static inline bool cpufreq_next_valid(struct cpufreq_frequency_table **pos)
 			(*pos)++;
 	return false;
 }
+=======
+static bool validate_cpu_freq(struct cpufreq_frequency_table *pos,
+		uint32_t *freq);
+>>>>>>> 82338af45ae... cpufreq: Introduce CPU input boost driver
 
 static void ib_boost_main(struct work_struct *work)
 {
@@ -274,7 +284,9 @@ static int do_cpu_boost(struct notifier_block *nb,
 		 * (validate_cpu_freq() returns true), then update the
 		 * input-boost freq array with the validated frequency.
 		 */
-		ret = validate_cpu_freq(policy->cpu, &boost_freq);
+
+		ret = validate_cpu_freq(policy->freq_table, &boost_freq);
+
 		if (ret)
 			set_boost_freq(b, policy->cpu, boost_freq);
 		policy->min = min(policy->max, boost_freq);
@@ -534,12 +546,11 @@ static void update_online_cpu_policy(void)
 	put_online_cpus();
 }
 
-static bool validate_cpu_freq(unsigned int cpu, uint32_t *freq)
+static bool validate_cpu_freq(struct cpufreq_frequency_table *pos,
+		uint32_t *freq)
 {
 	struct cpufreq_frequency_table *next;
-	struct cpufreq_frequency_table *pos;
 
-	pos = cpufreq_frequency_get_table(cpu);
 
 	/* Set the cursor to the first valid freq */
 	cpufreq_next_valid(&pos);
