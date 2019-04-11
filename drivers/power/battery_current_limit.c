@@ -41,7 +41,6 @@
 #define MIN_BCL_POLL_INTERVAL 10
 #define BATTERY_VOLTAGE_MIN 3400
 #define BTM_8084_FREQ_MITIG_LIMIT 1958400
-
 #define BCL_FETCH_DT_U32(_dev, _key, _search_str, _ret, _out, _exit) do { \
 		_key = _search_str; \
 		_ret = of_property_read_u32(_dev, _key, &_out); \
@@ -194,7 +193,8 @@ static uint32_t bcl_hotplug_request, bcl_hotplug_mask, bcl_soc_hotplug_mask;
 static uint32_t bcl_frequency_mask;
 static struct work_struct bcl_hotplug_work;
 static DEFINE_MUTEX(bcl_hotplug_mutex);
-static bool bcl_hotplug_enabled;
+static bool bcl_hotplug_enabled = false;
+module_param(bcl_hotplug_enabled, bool, 0644);
 static uint32_t battery_soc_val = 100;
 static uint32_t soc_low_threshold;
 static struct power_supply bcl_psy;
