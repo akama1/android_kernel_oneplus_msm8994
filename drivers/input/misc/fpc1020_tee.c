@@ -60,9 +60,6 @@
 #define FPC1020_RESET_HIGH2_US 1
 #define FPC_TTW_HOLD_TIME 1
 
-/* Unused key value to avoid interfering with active keys */
-#define KEY_FINGERPRINT 0x2ee
-
 #define ONEPLUS_EDIT  //Onplus modify for msm8996 platform and 15801 HW
 
 static const char * const pctl_names[] = {
@@ -899,7 +896,6 @@ int fpc1020_input_init(struct fpc1020_data *fpc1020)
         set_bit(KEY_POWER, fpc1020->input_dev->keybit);
         set_bit(KEY_F2, fpc1020->input_dev->keybit);
         set_bit(KEY_HOME, fpc1020->input_dev->keybit);
-	set_bit(KEY_FINGERPRINT, fpc1020->input_dev->keybit);
 
 		/* Register the input device */
 		error = input_register_device(fpc1020->input_dev);
@@ -924,30 +920,10 @@ void fpc1020_input_destroy(struct fpc1020_data *fpc1020)
 		input_free_device(fpc1020->input_dev);
 }
 
-static void set_fingerprintd_nice(int nice)
-{
-	struct task_struct *p;
-
-	read_lock(&tasklist_lock);
-	for_each_process(p) {
-		if (!memcmp(p->comm, "fingerprintd", 13)) {
-			set_user_nice(p, nice);
-			break;
-		}
-	}
-	read_unlock(&tasklist_lock);
-}
-
 static void fpc1020_suspend_resume(struct work_struct *work)
 {
 	struct fpc1020_data *fpc1020 =
 		container_of(work, typeof(*fpc1020), pm_work);
-
-	/* Escalate fingerprintd priority when screen is off */
-	if (fpc1020->screen_state)
-		set_fingerprintd_nice(0);
-	else
-		set_fingerprintd_nice(-20);
 
 	sysfs_notify(&fpc1020->dev->kobj, NULL,
 				dev_attr_screen_state.attr.name);
@@ -988,12 +964,6 @@ static irqreturn_t fpc1020_irq_handler(int irq, void *handle)
 		return IRQ_HANDLED;
 
 	wake_lock_timeout(&fpc1020->ttw_wl, msecs_to_jiffies(FPC_TTW_HOLD_TIME));
-
-	/* Report button input to trigger CPU boost */
-	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 1);
-	input_sync(fpc1020->input_dev);
-	input_report_key(fpc1020->input_dev, KEY_FINGERPRINT, 0);
-	input_sync(fpc1020->input_dev);
 
 	return IRQ_HANDLED;
 }
